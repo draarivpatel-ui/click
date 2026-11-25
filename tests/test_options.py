@@ -1199,6 +1199,31 @@ def test_missing_envvar_sequence(runner, envvar, expected):
     assert f"Error: Missing option {expected}." in result.output
 
 
+def test_missing_envvar_auto_prefix(runner):
+    """The error hint names the variable derived from ``auto_envvar_prefix``."""
+    cli = click.Command(
+        "cli",
+        params=[click.Option(["--port"], show_envvar=True, required=True)],
+        context_settings={"auto_envvar_prefix": "MYAPP"},
+    )
+    result = runner.invoke(cli)
+    assert result.exit_code == 2
+    assert "Error: Missing option '--port' (env var: 'MYAPP_PORT')." in result.output
+
+
+def test_missing_envvar_auto_prefix_hidden(runner):
+    """No variable is named when ``show_envvar`` is not set."""
+    cli = click.Command(
+        "cli",
+        params=[click.Option(["--port"], required=True)],
+        context_settings={"auto_envvar_prefix": "MYAPP"},
+    )
+    result = runner.invoke(cli)
+    assert result.exit_code == 2
+    assert "Error: Missing option '--port'." in result.output
+    assert "env var" not in result.output
+
+
 def test_case_insensitive_choice(runner):
     @click.command()
     @click.option("--foo", type=click.Choice(["Orange", "Apple"], case_sensitive=False))
